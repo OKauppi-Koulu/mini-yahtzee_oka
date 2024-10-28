@@ -33,6 +33,9 @@ export default Gameboard = ({navigation, route}) =>  {
 
     const [playerName, setPlayerName] = useState('');
     const [scores, setScores] = useState('');
+
+    const [sumOfScores, setSumOfScores] = useState(0);
+    const [bonusPoints, setBonusPoints] = useState(0);
     
     useEffect(() => {
         if (playerName === '' && route.params?.player) {
@@ -46,6 +49,10 @@ export default Gameboard = ({navigation, route}) =>  {
         })
         return unsubscribe;
     }, [navigation]);
+
+    useEffect(() => {
+        setBonusPoints(sumOfScores >= BONUS_POINTS_LIMIT ? BONUS_POINTS : 0);
+    }, [sumOfScores]);
 
     const getScoreboardData = async() => {
         try {
@@ -64,12 +71,14 @@ export default Gameboard = ({navigation, route}) =>  {
 
     const savePlayerPoints = async () => {
         const newKey = scores.length + 1;
+        
         const playerPoints = {
             key: newKey,
             name: playerName,
             date: 'date', // Tänne päivämäärä
             time: 'time', // Tänne kelloaika
-            points: dicePointsTotal
+            points: sumOfScores,
+            bonus: bonusPoints
         }
         try {
             const newScore = [...scores, playerPoints];
@@ -154,15 +163,22 @@ export default Gameboard = ({navigation, route}) =>  {
             let points = [...dicePointsTotal];
             if(!selectedPoints[i]) {
                 selectedPoints[i] = true;
+                
                 let nbrOfDices = diceSpots.reduce((total, x) => (x === (i + 1) ? total +1 : total), 0);
                 points[i] = nbrOfDices * (i + 1);
+
+                const newSumOfScores = points.reduce((total, point) => total + (point || 0), 0);
+                setSumOfScores(newSumOfScores);
+                
                 setDicesThrown(false);
+                
             } else {
                 setStatus("You already selected points for " + (i + 1));
                 return points[i];
             }
             setDicePointsTotal(points);
             setSelectedDicePoints(selectedPoints);
+            if(sumOfScores >= BONUS_POINTS_LIMIT) {  setBonusPoints(50) } else { setBonusPoints(0)};
             setNbrOfThrowsLeft(3);
             setSelectedDices([false, false, false, false, false]);
             const allPointsSelected = selectedPoints.every(point => point === true);
@@ -170,7 +186,7 @@ export default Gameboard = ({navigation, route}) =>  {
                 setGameEndStatus(true);
                 setStatus('Game has ended, save scores!');
             }
-            
+ 
             return points[i];
         }
     }
@@ -190,7 +206,7 @@ export default Gameboard = ({navigation, route}) =>  {
         return dicePointsTotal[i];
     }
 
-    const sumOfScores = dicePointsTotal.reduce((acc, curr) => acc + curr, 0);
+    
 
     const throwDices = () => {
         let spots = [...diceSpots];
@@ -239,7 +255,7 @@ export default Gameboard = ({navigation, route}) =>  {
                         <Text>Total score: {sumOfScores}</Text>
                     </Row>
                     <Row>
-                        <Text>Bonus: {sumOfScores < 63 ? 0 : 50}</Text>
+                        <Text>Bonus: {bonusPoints}</Text>
                     </Row>
                 </Container>
                 
