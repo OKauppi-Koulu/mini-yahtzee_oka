@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Text, View, Pressable } from "react-native";
 import { Container, Row, Col } from 'react-native-flex-grid';
+import { format } from 'date-fns';
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
@@ -36,6 +37,8 @@ export default Gameboard = ({navigation, route}) =>  {
 
     const [sumOfScores, setSumOfScores] = useState(0);
     const [bonusPoints, setBonusPoints] = useState(0);
+    const [savedPoints, setSavedPoints] = useState(false);
+    const [allPointsSelected, setAllPointsSelected] = useState(false);
     
     useEffect(() => {
         if (playerName === '' && route.params?.player) {
@@ -54,6 +57,12 @@ export default Gameboard = ({navigation, route}) =>  {
         setBonusPoints(sumOfScores >= BONUS_POINTS_LIMIT ? BONUS_POINTS : 0);
     }, [sumOfScores]);
 
+    useEffect(() => {
+        const allSelected = selectedDicePoints.every(point => point === true);
+        setAllPointsSelected(allSelected);
+        console.log("Updated allPointsSelected:", allSelected); // Debug
+    }, [selectedDicePoints]);
+
     const getScoreboardData = async() => {
         try {
             const jsonValue = await AsyncStorage.getItem(SCOREBOARD_KEY);
@@ -71,22 +80,37 @@ export default Gameboard = ({navigation, route}) =>  {
 
     const savePlayerPoints = async () => {
         const newKey = scores.length + 1;
+        const total = sumOfScores + bonusPoints;
+
+        const currentDate = new Date();
+        const formattedDate = format(currentDate, 'dd-MM-yyyy');
+        
+        const hours = currentDate.getHours();
+        const minutes = currentDate.getMinutes();
+        const seconds = currentDate.getSeconds();
+
+        const formatTime = (h, m, s) => {
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
+
+        const currentTime = formatTime(hours, minutes, seconds);
         
         const playerPoints = {
             key: newKey,
             name: playerName,
-            date: 'date', // Tänne päivämäärä
-            time: 'time', // Tänne kelloaika
+            date: formattedDate,
+            time: currentTime,
             points: sumOfScores,
-            bonus: bonusPoints
+            bonus: bonusPoints,
+            total: total
         }
         try {
             const newScore = [...scores, playerPoints];
             const jsonValue = JSON.stringify(newScore);
             await AsyncStorage.setItem(SCOREBOARD_KEY, jsonValue);
-
-            //Miten resetoidaan peli ??
-
+            setGameEndStatus(true);
+            setSavedPoints(true);
+            setAllPointsSelected(false);
             
             console.log("Gameboard: Save successful: " + jsonValue);
         } catch(e) {
@@ -94,7 +118,16 @@ export default Gameboard = ({navigation, route}) =>  {
         }
     }
 
-
+    const resetGame = () => {
+        setNbrOfThrowsLeft(NBR_OF_THROWS);
+        setGameEndStatus(false);
+        setSavedPoints(false);
+        setBonusPoints(0);
+        setSelectedDices([false, false, false, false, false]);
+        setSelectedDicePoints([0,0,0,0,0,0]);
+        setDicePointsTotal([0,0,0,0,0,0]);
+        setSumOfScores(0);
+    }
 
     // Luodaan arpakuutiorivi
     const dicesRow  = [];
@@ -178,10 +211,10 @@ export default Gameboard = ({navigation, route}) =>  {
             }
             setDicePointsTotal(points);
             setSelectedDicePoints(selectedPoints);
-            if(sumOfScores >= BONUS_POINTS_LIMIT) {  setBonusPoints(50) } else { setBonusPoints(0)};
+            
             setNbrOfThrowsLeft(3);
             setSelectedDices([false, false, false, false, false]);
-            const allPointsSelected = selectedPoints.every(point => point === true);
+            
             if(allPointsSelected) {
                 setGameEndStatus(true);
                 setStatus('Game has ended, save scores!');
@@ -190,8 +223,6 @@ export default Gameboard = ({navigation, route}) =>  {
             return points[i];
         }
     }
-
-    
 
     //Vaihdellaan nopan väriä
     function getDiceColor(i) {    
@@ -205,8 +236,6 @@ export default Gameboard = ({navigation, route}) =>  {
     function getSpotTotal(i) {
         return dicePointsTotal[i];
     }
-
-    
 
     const throwDices = () => {
         let spots = [...diceSpots];
@@ -223,6 +252,26 @@ export default Gameboard = ({navigation, route}) =>  {
         setDicesThrown(true);
     }
 
+    const bottomButton = () => {
+        
+        if(allPointsSelected) { 
+            return (
+                <Pressable onPress={() => savePlayerPoints()}>                
+                    <Button style={styles.button} mode="elevated">Save points!</Button>
+                </Pressable>
+            );
+        } else if(savedPoints) { 
+            return(
+                <>
+                    <Text style={[styles.gameboard, {marginTop:30}]}>Score saved for {playerName}</Text>
+                    <Pressable onPress={() => resetGame()}>
+                        <Button style={styles.button} mode="elevated">New game!</Button>
+                    </Pressable>
+                </>
+            );
+        }
+    }
+
     return (
         <>
             <Header />
@@ -234,7 +283,7 @@ export default Gameboard = ({navigation, route}) =>  {
                 <Text>Throws left: {nbrOfThrowsLeft}</Text>
                 <Text>{status}</Text>
 
-                { nbrOfThrowsLeft > 0 && !gameEndStatus ? 
+                { nbrOfThrowsLeft > 0 && !allPointsSelected && !gameEndStatus ? 
                     <Pressable onPress={() => throwDices()}>
                         <Button style={styles.button}>Heitä noppaa!</Button>
                     </Pressable> : <Text>No throws left!</Text>
@@ -251,19 +300,17 @@ export default Gameboard = ({navigation, route}) =>  {
                     </Row>
                 </Container>
                 <Container>
-                    <Row>
-                        <Text>Total score: {sumOfScores}</Text>
+                    <Row style={{justifyContent: "center"}}>
+                        <Text style={styles.gameinfo}>Total score: {sumOfScores}</Text>
                     </Row>
-                    <Row>
-                        <Text>Bonus: {bonusPoints}</Text>
+                    <Row style={{justifyContent: "center"}}>
+                        <Text style={styles.gameinfo}>Bonus: {bonusPoints}</Text>
                     </Row>
                 </Container>
                 
-                <Text style={{marginTop: 30}}>Player: {playerName} </Text>
-                <Pressable onPress={() => savePlayerPoints()}>
-                    
-                    <Button style={styles.button} mode="elevated">Save points!</Button>
-                </Pressable>
+                {bottomButton()}
+
+
             </View>
             <Footer />
         </>

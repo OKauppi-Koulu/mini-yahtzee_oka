@@ -65,14 +65,11 @@ export default StyleSheet.create({
     flexDirection: 'row',
   },
   button: {
-    margin: 30,
-    flexDirection: "row",
-    padding: 10,
+    margin: 5,
+    padding: 5,
     backgroundColor: "#599bc7",
-    width: 150,
+    width: 300,
     borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   textinput: {
     width: 200,

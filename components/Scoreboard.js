@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from "react";
-import { Text, View } from "react-native";
+import { Text, View, Pressable } from "react-native";
+import { Button } from "react-native-paper";
 
 import Header from "./Header";
 import Footer from "./Footer";
@@ -35,24 +36,38 @@ export default Scoreboard = ({ navigation }) =>  {
         }
     }
 
+
+    //TYhjentää mutta gameboardin tempistä tulee uus tilalle.
     const clearScoreboard = async () => {
         try {
-            await AsyncStorage.removeItem(SCOREBOARD_KEY);
             setScores([]);
-        } catch(e) {
-            console.log("Clear error: " + e);
+            await AsyncStorage.clear();
+            console.log("Scoreboard cleared successfully.");
+        } catch (error) {
+            console.error("Error clearing scoreboard: ", error);
         }
-    }
+    };
+
+    const sortedScores = scores.sort((a, b) => b.total - a.total);
+
+    // Get the top 10 scores
+    const topScores = sortedScores.slice(0, 10);
 
     return (
-        <>
-            <Header />
-            <View>
-                <Text>
-                    Scoreboard
+        <View style={styles.container}>
+            <Text style={styles.title}>Top 10 Scores</Text>
+            {topScores.map((score) => (
+                <><Text key={score.key} style={styles.scoreText}>
+                    {score.name || 'Unnamed'}: Points {score.points}, Bonus {score.bonus}, Total {score.total}
                 </Text>
-            </View>
-            <Footer />
-        </>
-    )
+                <Text>
+                    {score.date} , {score.time}
+                </Text>
+                </>
+            ))}
+            <Pressable onPress={() => clearScoreboard()}>
+                <Button style={styles.button} mode="elevated">Reset scores!</Button>
+            </Pressable>
+        </View>
+    );
 }

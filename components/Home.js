@@ -67,6 +67,7 @@ export default Home = ({navigation}) =>  {
                     <Pressable onPress={() => navigation.navigate('Gameboard', {player: playerName})}>
                         <Button style={styles.button} mode="elevated">Play!</Button>
                     </Pressable>
+
                 </>
                 }
             </View>
