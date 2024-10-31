@@ -81,5 +81,23 @@ export default StyleSheet.create({
   buttonText: {
     color:"#2B2B52",
     fontSize: 20,
+  },
+  scoreHeader: {
+    margin: 10,
+    fontSize: 20
+  },
+  scores: {
+    flexDirection: "column",
+    width: 300,
+    justifyContent: "center",
+    alignItems: "center",
+    alignContent: "center",
+    margin: 7,
+  },
+  scoreRow1: {
+    textAlign:"center"
+  },
+  scoreRow2: {
+    textAlign:"center"
   }
 });

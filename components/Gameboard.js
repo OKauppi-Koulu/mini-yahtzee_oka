@@ -60,7 +60,6 @@ export default Gameboard = ({navigation, route}) =>  {
     useEffect(() => {
         const allSelected = selectedDicePoints.every(point => point === true);
         setAllPointsSelected(allSelected);
-        console.log("Updated allPointsSelected:", allSelected); // Debug
     }, [selectedDicePoints]);
 
     const getScoreboardData = async() => {
@@ -70,7 +69,7 @@ export default Gameboard = ({navigation, route}) =>  {
                 const tmpScores = JSON.parse(jsonValue);
               
                 setScores(tmpScores);
-                console.log("Gameboard: Read succesful");
+                console.log("Gameboard: Read successful");
                 console.log("Gameboard: Number of scores: " + tmpScores.length);
             }
         } catch(e) {
@@ -78,7 +77,9 @@ export default Gameboard = ({navigation, route}) =>  {
         }
     }
 
+    //Tallennetaan pelaajan pisteet
     const savePlayerPoints = async () => {
+        getScoreboardData();
         const newKey = scores.length + 1;
         const total = sumOfScores + bonusPoints;
 
@@ -118,6 +119,7 @@ export default Gameboard = ({navigation, route}) =>  {
         }
     }
 
+    //Resetoidaan peli
     const resetGame = () => {
         setNbrOfThrowsLeft(NBR_OF_THROWS);
         setGameEndStatus(false);
@@ -131,6 +133,8 @@ export default Gameboard = ({navigation, route}) =>  {
 
     // Luodaan arpakuutiorivi
     const dicesRow  = [];
+
+    if(nbrOfThrowsLeft !== 3) {
     for (let i = 0; i < NBR_OF_DICES; i++) {
         dicesRow.push(
             <Col key={"dice" + i}>
@@ -146,7 +150,7 @@ export default Gameboard = ({navigation, route}) =>  {
                 </Pressable>
             </Col>
         );
-    }
+    }}
 
     // Tässä tehdään pisterivit sarakkeittain (Col)
     const pointsRow = [];
@@ -277,7 +281,7 @@ export default Gameboard = ({navigation, route}) =>  {
             <Header />
             <View style={styles.container}>
                 <Container>
-                    <Row>{dicesRow}</Row>
+                    <Row style={{height: 80}}>{dicesRow}</Row>
                 </Container>
                 
                 <Text>Throws left: {nbrOfThrowsLeft}</Text>
@@ -285,8 +289,8 @@ export default Gameboard = ({navigation, route}) =>  {
 
                 { nbrOfThrowsLeft > 0 && !allPointsSelected && !gameEndStatus ? 
                     <Pressable onPress={() => throwDices()}>
-                        <Button style={styles.button}>Heitä noppaa!</Button>
-                    </Pressable> : <Text>No throws left!</Text>
+                        <Button style={styles.button}>Throw dices!</Button>
+                    </Pressable> : <Text style={{height: 58, padding: 20}}>No throws left!</Text>
                 }
                 
                 <Container>
@@ -309,7 +313,6 @@ export default Gameboard = ({navigation, route}) =>  {
                 </Container>
                 
                 {bottomButton()}
-
 
             </View>
             <Footer />
